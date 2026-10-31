@@ -18,7 +18,7 @@
 - HTML, CSS, JavaScript
 - Bootstrap 5 dan Swiper.js
 - QRCode.js
-- XAMPP (server lokal)
+- Docker
 
 ## 🚀 Cara Menjalankan Proyek
 
