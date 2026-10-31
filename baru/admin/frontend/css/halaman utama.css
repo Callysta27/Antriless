@@ -1,0 +1,930 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+
+:root{
+  --font-main: 'Inter', sans-serif;
+}
+
+body,
+button,
+input,
+select,
+textarea,
+table{
+  font-family: var(--font-main);
+}
+
+.bg-primary,
+.bg-secondary,
+.bg-dark{
+    font-family: 'Inter', sans-serif;
+}
+
+/* Mengatur padding untuk pembungkus teks */
+.bg-primary .kotak {
+    padding-top: 30px; 
+}
+
+.bg-primary .kotak .kotak_py-3 {
+    padding-top: 10px 
+;}
+
+.kotakAtas,
+.kotakBawah{
+    padding-top: 30px;
+    padding-left: 30px;
+}
+
+/* Memaksa tag 'a' menjadi flexbox berdampingan ke samping */
+a.category-item.swiper-slide {
+    display: flex !important;
+    flex-direction: row !important; /* Memastikan arahnya horizontal kiri-kanan */
+    align-items: center !important; /* Menyejajarkan tinggi tengah gambar & teks */
+    justify-content: center;    /* Memulai susunan dari kiri */
+    gap: 15px;                      /* Memberi jarak 15px antara gambar dan teks */
+    text-decoration: none;          /* Menghilangkan garis bawah link jika ada */
+}
+
+.category-swiper{
+    overflow-x:auto;
+    white-space:nowrap;
+}
+
+/* Mengatur teks judul */
+.category-item .category-title {
+    margin: 5pt !important;
+    font-size: 24px;
+    font-weight: 700;
+    color: #0F172A;
+    white-space: nowrap;
+}
+
+a.category-item.swiper-slide{
+    background:white;
+    border-radius:24px;
+    padding:20px;
+    border:1px solid #E2E8F0;
+    box-shadow:0 4px 20px rgba(0,0,0,.04);
+    transition:.3s;
+}
+
+a.category-item.swiper-slide:hover{
+    transform:translateY(-4px);
+}
+
+.category-item img {
+    width: 120px !important;
+    height: 120px !important;
+    object-fit: contain;
+}
+
+.py-5 a{
+    color: black;
+    text-decoration: none;
+}
+
+.py-5 .product-item{
+    background: #fff;
+    border-radius: 24px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.py-5 .product-item:hover{
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
+
+.py-5 .product-item img{
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 18px;
+    transition: all 0.4s ease;
+}
+
+.py-5 .product-item:hover img{
+    transform: scale(1.05);
+}
+
+.py-5 .product-item .quantity-left-minus,
+.py-5 .product-item .quantity-right-plus {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background:  #534AB7;
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 24px;
+}
+
+.py-5 .product-item .product-qty {
+    max-width: 110px; /* Membatasi total lebar plus-input-minus agar tidak melar */
+    height: 35px;     /* Mengunci tinggi seluruh baris input */
+}
+
+.py-5 .product-item .form-control {
+    text-align: center;
+    height: 40px;
+    border: none;
+    background: transparent;
+    font-weight: 600;
+    box-shadow: none;
+}
+
+.py-5 .product-item .nav-link {
+    background: #534AB7;
+    color: white !important;
+    padding: 10px 18px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.py-5 .col{
+    margin-bottom: 5%;
+}
+
+.product-item .qty {
+    display: inline-block; 
+    margin-bottom: 5px; /* Memberi jarak antar span */
+    margin-right: 5px; /* Memberi jarak antara qty dan rating */
+    vertical-align: middle; /* Memaksa teks ini sejajar secara vertikal */
+}
+
+/* Memperbaiki elemen rating */
+.product-item .rating,
+.product-item .price {
+    display: inline-flex;
+    align-items: center;      /* Menyejajarkan bintang dan angka 4.5 */
+    vertical-align: middle;   /* SANGAT PENTING: Membawa seluruh kesatuan rating sejajar dengan teks .qty di sebelahnya */
+    gap: 2px;                 /* Memberi jarak antara bintang dan angka 4.5 */
+    margin-bottom: 5px;
+}
+
+.product-item .price {
+    margin-left: 5px; /* Memberi jarak antara rating dan harga */
+    color:#534AB7;
+    font-weight:700;
+    font-size:18px;
+}
+
+footer,
+#footer-bottom{
+    background:#FFFFFF;
+    border-top:1px solid #E2E8F0;
+}
+
+/* punya ellen */
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.5);
+    justify-content:center;
+    align-items:center;
+}
+
+.modal.active{
+    display:flex;
+}
+
+.receipt{
+    width:380px;
+    background:white;
+    padding:25px;
+    border:2px solid #cfcfcf;
+    border-radius:10px;
+    font-family:'Courier New', monospace;
+    position:relative;
+}
+
+.receipt-close{
+    position:absolute;
+    top:10px;
+    right:15px;
+    border:none;
+    background:none;
+    font-size:24px;
+    font-weight:bold;
+    cursor:pointer;
+    color:#555;
+}
+
+.receipt-close:hover{
+    color:black;
+}
+
+.receipt-title{
+    text-align:center;
+    font-size:32px;
+    letter-spacing:6px;
+    font-weight:bold;
+    margin-bottom:20px;
+    padding-bottom:12px;
+    border-bottom:2px solid #999;
+}
+
+.receipt-list{
+    margin:25px 0;
+}
+
+.receipt-item{
+    display:flex;
+    justify-content:space-between;
+    margin:15px 0;
+    font-size:15px;
+}
+
+.receipt-total{
+    display:flex;
+    justify-content:space-between;
+    margin-top:20px;
+    padding-top:15px;
+    border-top:2px solid #999;
+    font-weight:bold;
+    font-size:16px;
+}
+
+.receipt-divider{
+    margin:25px 0;
+    border-top:2px solid #999;
+}
+
+#qrcode{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin-top:15px;
+}
+
+#qrcode img{
+    width:220px !important;
+    height:220px !important;
+}
+
+.close-btn{
+    display:block;
+    width:100%;
+    margin-top:45px;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:#534AB7;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.close-btn:hover{
+    opacity:.9;
+}
+
+.bg-primary h1{
+    font-size: 56px;
+    font-weight: 800 !important;
+    line-height: 1.1;
+}
+
+.bg-primary h3{
+    font-size: 24px;
+    font-weight: 700 !important;
+}
+
+.bg-secondary h2,
+.bg-dark h2{
+    font-size: 42px;
+    font-weight: 800 !important;
+}
+
+.bg-secondary h4,
+.bg-dark h4{
+    font-size: 22px;
+    font-weight: 700 !important;
+}
+
+.bg-primary{
+    background: #534AB7 !important;
+    border-radius: 24px;
+}
+
+.bg-secondary{
+    background: #EEEDFE !important;
+    color: #534AB7 !important;
+    border-radius: 24px;
+}
+
+.bg-dark{
+    background: #6D64D8 !important;
+    color: white !important;
+    border-radius: 24px;
+}
+
+.swiper-wrapper{
+    overflow-x:auto;
+    scrollbar-width:none;
+}
+
+.swiper-wrapper::-webkit-scrollbar{
+    display:none;
+}
+
+/* =====================================================================
+   RESPONSIVE & PERAPIAN JARAK
+   (tempel di paling bawah file, menimpa aturan di atasnya)
+   ===================================================================== */
+
+/* ---------- Dasar: berlaku di semua ukuran layar ---------- */
+html,
+body {
+    overflow-x: hidden;              /* cegah halaman bisa digeser ke samping */
+}
+
+/* Kotak promo: padding rata di semua sisi & tinggi kotak kanan seragam */
+.bg-primary .kotak {
+    padding: 16px 12px;
+}
+
+.kotakAtas,
+.kotakBawah {
+    padding: 28px;
+    height: 100%;
+}
+
+.bg-primary h1 {
+    font-size: clamp(32px, 5vw, 56px);
+}
+
+.bg-secondary h2,
+.bg-dark h2 {
+    font-size: clamp(26px, 3.5vw, 42px);
+}
+
+/* Carousel (Category & Newly Fresh Bake): geser horizontal yang rapi */
+.swiper-wrapper {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 6px 4px 14px;           /* ruang untuk bayangan kartu */
+}
+
+.swiper-wrapper > .swiper-slide {
+    flex: 0 0 auto;
+    width: 240px !important;         /* menimpa style="width:25%" di HTML */
+    margin-right: 0 !important;      /* jarak diatur oleh gap */
+    scroll-snap-align: start;
+}
+
+.category-item img {
+    width: 90px !important;
+    height: 90px !important;
+}
+
+.category-item .category-title {
+    font-size: 20px;
+}
+
+/* Kartu "Newly Fresh Bake": gambar kiri, teks kanan, tidak patah per huruf */
+.brand-carousel .swiper-slide {
+    width: 280px !important;
+}
+
+.brand-carousel .card {
+    height: 100%;
+    margin-bottom: 0 !important;
+}
+
+.brand-carousel .card .row {
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.brand-carousel .card .col-md-4 {
+    flex: 0 0 38%;
+    max-width: 38%;
+}
+
+.brand-carousel .card .col-md-8 {
+    flex: 1 1 auto;
+    width: auto;
+}
+
+.brand-carousel .card h5 {
+    font-size: 16px;
+    margin: 4px 0 0;
+}
+
+/* Grid produk: jarak antar kartu konsisten, gambar proporsional */
+.py-5 .col {
+    margin-bottom: 24px;
+}
+
+.py-5 .product-item {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.py-5 .product-item img {
+    height: auto;
+    aspect-ratio: 4 / 3;
+}
+
+/* Baris tombol jumlah + "Add to Cart": rapi, menempel di bawah kartu */
+.py-5 .product-item > .d-flex,
+.py-5 .product-item .d-flex.align-items-center {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.py-5 .product-item .product-qty {
+    flex-wrap: nowrap;
+    width: auto;
+    max-width: none;
+    height: 36px;
+}
+
+.py-5 .product-item .quantity-left-minus,
+.py-5 .product-item .quantity-right-plus {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+}
+
+.py-5 .product-item .product-qty .form-control {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+}
+
+.py-5 .product-item .nav-link {
+    flex: 1 1 auto;
+    height: 36px;
+    padding: 8px 14px;
+}
+
+/* Struk pembayaran tidak melebihi layar */
+.receipt {
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+}
+
+/* ---------- Tablet (≤ 991px) ---------- */
+@media (max-width: 991.98px) {
+    section.py-5 {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+
+    .section-header {
+        margin-bottom: 1.5rem !important;
+        row-gap: 8px;
+        column-gap: 16px;
+        align-items: center;
+    }
+
+    .section-title {
+        font-size: 26px;
+    }
+
+    /* Judul "Foods and Drinks" di atas, tab kategori di bawahnya */
+    .tabs-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 1.5rem 0 !important;
+    }
+
+    .tabs-header nav {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .tabs-header .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        max-width: 100%;
+        scrollbar-width: none;
+    }
+
+    .tabs-header .nav-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tabs-header .nav-tabs .nav-link {
+        white-space: nowrap;
+    }
+}
+
+/* ---------- HP & tablet kecil (≤ 767px) ---------- */
+@media (max-width: 767.98px) {
+    /* Header */
+    header .main-logo h1 {
+        font-size: 28px;
+    }
+
+    header .row {
+        row-gap: 10px;
+    }
+
+    /* Kotak promo bertumpuk dengan jarak yang sama */
+    section.py-3 .row > [class*="col-"] + [class*="col-"] {
+        margin-top: 16px;
+    }
+
+    .bg-primary[style] {
+        min-height: auto !important;   /* menimpa min-height: 420px di HTML */
+        padding-bottom: 24px !important;
+    }
+
+    .kotakAtas[style],
+    .kotakBawah[style] {
+        min-height: 160px !important;
+        padding: 24px;
+    }
+
+    .bg-primary h3 {
+        font-size: 18px;
+    }
+
+    .bg-primary,
+    .bg-secondary,
+    .bg-dark {
+        border-radius: 20px;
+    }
+
+    /* Carousel lebih ringkas */
+    .swiper-wrapper {
+        gap: 14px;
+    }
+
+    .category-carousel a.category-item.swiper-slide {
+        width: 140px !important;
+        flex-direction: column !important;   /* gambar di atas, teks di bawah */
+        gap: 8px;
+        padding: 16px;
+    }
+
+    .category-item img {
+        width: 70px !important;
+        height: 70px !important;
+    }
+
+    .category-item .category-title {
+        font-size: 16px;
+        margin: 0 !important;
+    }
+
+    .brand-carousel .swiper-slide {
+        width: 240px !important;
+    }
+}
+
+/* ---------- HP kecil (≤ 400px) ---------- */
+@media (max-width: 400px) {
+    .container-fluid {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .bg-primary h1 {
+        font-size: 30px;
+    }
+
+    .bg-secondary h2,
+    .bg-dark h2 {
+        font-size: 24px;
+    }
+
+    .py-5 .product-item {
+        padding: 14px;
+    }
+
+    .py-5 .product-item .nav-link {
+        padding: 10px 14px;
+    }
+
+    .receipt {
+        padding: 18px;
+    }
+
+    .receipt-title {
+        font-size: 24px;
+        letter-spacing: 4px;
+    }
+
+    #qrcode img {
+        width: 180px !important;
+        height: 180px !important;
+    }
+}
+
+/* =====================================================================
+   RESPONSIVE & PERAPIAN JARAK
+   (tempel di paling bawah file, menimpa aturan di atasnya)
+   ===================================================================== */
+
+/* ---------- Dasar: berlaku di semua ukuran layar ---------- */
+html,
+body {
+    overflow-x: hidden;              /* cegah halaman bisa digeser ke samping */
+}
+
+/* Kotak promo: padding rata di semua sisi & tinggi kotak kanan seragam */
+.bg-primary .kotak {
+    padding: 16px 12px;
+}
+
+.kotakAtas,
+.kotakBawah {
+    padding: 28px;
+    height: 100%;
+}
+
+.bg-primary h1 {
+    font-size: clamp(32px, 5vw, 56px);
+}
+
+.bg-secondary h2,
+.bg-dark h2 {
+    font-size: clamp(26px, 3.5vw, 42px);
+}
+
+/* Carousel (Category & Newly Fresh Bake): geser horizontal yang rapi */
+.swiper-wrapper {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 6px 4px 14px;           /* ruang untuk bayangan kartu */
+}
+
+.swiper-wrapper > .swiper-slide {
+    flex: 0 0 auto;
+    width: 240px !important;         /* menimpa style="width:25%" di HTML */
+    margin-right: 0 !important;      /* jarak diatur oleh gap */
+    scroll-snap-align: start;
+}
+
+.category-item img {
+    width: 90px !important;
+    height: 90px !important;
+}
+
+.category-item .category-title {
+    font-size: 20px;
+}
+
+/* Kartu "Newly Fresh Bake": gambar kiri, teks kanan, tidak patah per huruf */
+.brand-carousel .swiper-slide {
+    width: 280px !important;
+}
+
+.brand-carousel .card {
+    height: 100%;
+    margin-bottom: 0 !important;
+}
+
+.brand-carousel .card .row {
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.brand-carousel .card .col-md-4 {
+    flex: 0 0 38%;
+    max-width: 38%;
+}
+
+.brand-carousel .card .col-md-8 {
+    flex: 1 1 auto;
+    width: auto;
+}
+
+.brand-carousel .card h5 {
+    font-size: 16px;
+    margin: 4px 0 0;
+}
+
+/* Grid produk: jarak antar kartu konsisten, gambar proporsional */
+.py-5 .col {
+    margin-bottom: 24px;
+}
+
+.py-5 .product-item {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.py-5 .product-item img {
+    height: auto;
+    aspect-ratio: 4 / 3;
+}
+
+/* Baris tombol jumlah + "Add to Cart": rapi, menempel di bawah kartu */
+.py-5 .product-item > .d-flex,
+.py-5 .product-item .d-flex.align-items-center {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.py-5 .product-item .product-qty {
+    flex-wrap: nowrap;
+    width: auto;
+    max-width: none;
+    height: 36px;
+}
+
+.py-5 .product-item .quantity-left-minus,
+.py-5 .product-item .quantity-right-plus {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+}
+
+.py-5 .product-item .product-qty .form-control {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+}
+
+.py-5 .product-item .nav-link {
+    flex: 1 1 auto;
+    height: 36px;
+    padding: 8px 14px;
+}
+
+/* Struk pembayaran tidak melebihi layar */
+.receipt {
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+}
+
+/* ---------- Tablet (≤ 991px) ---------- */
+@media (max-width: 991.98px) {
+    section.py-5 {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+
+    .section-header {
+        margin-bottom: 1.5rem !important;
+        row-gap: 8px;
+        column-gap: 16px;
+        align-items: center;
+    }
+
+    .section-title {
+        font-size: 26px;
+    }
+
+    /* Judul "Foods and Drinks" di atas, tab kategori di bawahnya */
+    .tabs-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 1.5rem 0 !important;
+    }
+
+    .tabs-header nav {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .tabs-header .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        max-width: 100%;
+        scrollbar-width: none;
+    }
+
+    .tabs-header .nav-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tabs-header .nav-tabs .nav-link {
+        white-space: nowrap;
+    }
+}
+
+/* ---------- HP & tablet kecil (≤ 767px) ---------- */
+@media (max-width: 767.98px) {
+    /* Header */
+    header .main-logo h1 {
+        font-size: 28px;
+    }
+
+    header .row {
+        row-gap: 10px;
+    }
+
+    /* Kotak promo bertumpuk dengan jarak yang sama */
+    section.py-3 .row > [class*="col-"] + [class*="col-"] {
+        margin-top: 16px;
+    }
+
+    .bg-primary[style] {
+        min-height: auto !important;   /* menimpa min-height: 420px di HTML */
+        padding-bottom: 24px !important;
+    }
+
+    .kotakAtas[style],
+    .kotakBawah[style] {
+        min-height: 160px !important;
+        padding: 24px;
+    }
+
+    .bg-primary h3 {
+        font-size: 18px;
+    }
+
+    .bg-primary,
+    .bg-secondary,
+    .bg-dark {
+        border-radius: 20px;
+    }
+
+    /* Carousel lebih ringkas */
+    .swiper-wrapper {
+        gap: 14px;
+    }
+
+    .category-carousel a.category-item.swiper-slide {
+        width: 140px !important;
+        flex-direction: column !important;   /* gambar di atas, teks di bawah */
+        gap: 8px;
+        padding: 16px;
+    }
+
+    .category-item img {
+        width: 70px !important;
+        height: 70px !important;
+    }
+
+    .category-item .category-title {
+        font-size: 16px;
+        margin: 0 !important;
+    }
+
+    .brand-carousel .swiper-slide {
+        width: 240px !important;
+    }
+}
+
+/* ---------- HP kecil (≤ 400px) ---------- */
+@media (max-width: 400px) {
+    .container-fluid {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .bg-primary h1 {
+        font-size: 30px;
+    }
+
+    .bg-secondary h2,
+    .bg-dark h2 {
+        font-size: 24px;
+    }
+
+    .py-5 .product-item {
+        padding: 14px;
+    }
+
+    .py-5 .product-item .nav-link {
+        padding: 10px 14px;
+    }
+
+    .receipt {
+        padding: 18px;
+    }
+
+    .receipt-title {
+        font-size: 24px;
+        letter-spacing: 4px;
+    }
+
+    #qrcode img {
+        width: 180px !important;
+        height: 180px !important;
+    }
+}

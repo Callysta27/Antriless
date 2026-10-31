@@ -1,0 +1,453 @@
+
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+	--brand: #534AB7;
+	--brand-2: #6D64D8;
+	--brand-dark: #2B2560;
+	--brand-soft: #EEEDFE;
+	--bg: #F4F3FB;
+	--surface: #FFFFFF;
+	--field: #F3F2F9;
+	--text: #1E1B3A;
+	--muted: #6B6886;
+	--line: #E4E2F3;
+	--radius: 28px;
+	--ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+* { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	min-height: 100dvh;
+	display: grid;
+	place-items: center;
+	padding: clamp(12px, 3vw, 32px);
+	font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+	color: var(--text);
+	background:
+		radial-gradient(circle at 12% 18%, rgba(109, 100, 216, .14), transparent 40%),
+		radial-gradient(circle at 88% 82%, rgba(83, 74, 183, .12), transparent 42%),
+		var(--bg);
+	-webkit-font-smoothing: antialiased;
+}
+
+h1 { margin: 0; font-weight: 800; letter-spacing: -.02em; }
+p  { margin: 0; }
+a  { color: var(--brand); text-decoration: none; }
+
+/* ================= Kartu utama ================= */
+.container {
+	position: relative;
+	width: min(1040px, 100%);
+	min-height: min(640px, calc(100dvh - 48px));
+	display: grid;
+	grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+	background: var(--surface);
+	border-radius: var(--radius);
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgba(30, 27, 58, .06), 0 30px 70px -30px rgba(43, 37, 96, .45);
+}
+
+/* ================= Panel merek (kiri) ================= */
+.overlay-container {
+	grid-column: 1;
+	grid-row: 1;
+	position: relative;
+	overflow: hidden;
+}
+
+.overlay {
+	position: absolute;
+	inset: 0;
+	color: #fff;
+	background: linear-gradient(150deg, var(--brand-2) 0%, var(--brand) 55%, var(--brand-dark) 100%);
+}
+
+/* Pola titik halus */
+.overlay::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background-image: radial-gradient(rgba(255, 255, 255, .16) 1.2px, transparent 1.2px);
+	background-size: 22px 22px;
+	mask-image: linear-gradient(180deg, #000 0%, transparent 85%);
+	-webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 85%);
+}
+
+/* Ikon makanan yang mengambang */
+.overlay::after {
+	content: "🍜  🧋  🍔  🍰  🥟";
+	position: absolute;
+	left: 50%;
+	bottom: 34px;
+	transform: translateX(-50%);
+	font-size: clamp(22px, 2.4vw, 30px);
+	letter-spacing: 6px;
+	white-space: nowrap;
+	animation: float 5s ease-in-out infinite;
+	filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .18));
+}
+
+@keyframes float {
+	0%, 100% { transform: translate(-50%, 0); }
+	50%      { transform: translate(-50%, -8px); }
+}
+
+.overlay-panel {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: flex-start;
+	gap: 14px;
+	padding: clamp(32px, 4vw, 52px);
+	text-align: left;
+	transition: opacity .45s var(--ease), transform .45s var(--ease), visibility .45s;
+}
+
+/* Label nama aplikasi */
+.overlay-panel::before {
+	content: "🍽️  Antriless";
+	display: inline-flex;
+	align-items: center;
+	padding: 7px 14px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, .16);
+	border: 1px solid rgba(255, 255, 255, .25);
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: .3px;
+	margin-bottom: 10px;
+}
+
+.overlay-panel h1 {
+	font-size: clamp(30px, 3.4vw, 44px);
+	line-height: 1.08;
+}
+
+.overlay-panel p {
+	font-size: 15px;
+	line-height: 1.6;
+	opacity: .88;
+	max-width: 32ch;
+	margin-bottom: 10px;
+}
+
+/* Panel kiri default: ajakan "Sign Up" (overlay-right) */
+.overlay-left {
+	opacity: 0;
+	visibility: hidden;
+	transform: translateY(16px);
+}
+
+.container.right-panel-active .overlay-left {
+	opacity: 1;
+	visibility: visible;
+	transform: none;
+}
+
+.container.right-panel-active .overlay-right {
+	opacity: 0;
+	visibility: hidden;
+	transform: translateY(-16px);
+}
+
+/* ================= Area form (kanan) ================= */
+.form-container {
+	grid-column: 2;
+	grid-row: 1;
+	position: relative;
+	display: flex;
+	transition: opacity .45s var(--ease), transform .45s var(--ease), visibility .45s;
+}
+
+.sign-up-container {
+	opacity: 0;
+	visibility: hidden;
+	transform: translateX(24px);
+}
+
+.container.right-panel-active .sign-up-container {
+	opacity: 1;
+	visibility: visible;
+	transform: none;
+}
+
+.container.right-panel-active .sign-in-container {
+	opacity: 0;
+	visibility: hidden;
+	transform: translateX(-24px);
+}
+
+form {
+	width: 100%;
+	max-width: 440px;
+	margin: auto;
+	padding: clamp(28px, 5vw, 56px) clamp(22px, 4vw, 48px);
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	text-align: left;
+	background: transparent;
+}
+
+form h1 {
+	font-size: clamp(26px, 2.6vw, 34px);
+	color: var(--brand-dark);
+	margin-bottom: 6px;
+}
+
+/* Kalimat kecil di bawah judul form */
+.sign-in-container form h1::after,
+.sign-up-container form h1::after {
+	display: block;
+	margin-top: 8px;
+	font-size: 14px;
+	font-weight: 500;
+	letter-spacing: 0;
+	color: var(--muted);
+}
+.sign-in-container form h1::after { content: "Masuk untuk memesan tanpa antre."; }
+.sign-up-container form h1::after { content: "Daftar dalam kurang dari satu menit."; }
+
+/* ================= Input ================= */
+input,
+select[name="role"] {
+	width: 100%;
+	margin: 7px 0;
+	padding: 14px 16px 14px 46px;
+	font: 500 15px/1.2 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+	color: var(--text);
+	background-color: var(--field);
+	background-repeat: no-repeat;
+	background-position: 16px center;
+	background-size: 18px;
+	border: 1.5px solid transparent;
+	border-radius: 14px;
+	outline: none;
+	transition: border-color .2s, background-color .2s, box-shadow .2s;
+}
+
+input::placeholder { color: #9A97B3; }
+
+input:hover,
+select[name="role"]:hover { border-color: var(--line); }
+
+input:focus,
+select[name="role"]:focus {
+	background-color: #fff;
+	border-color: var(--brand);
+	box-shadow: 0 0 0 4px rgba(83, 74, 183, .14);
+}
+
+/* Ikon di dalam kolom input */
+input[type="email"] {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B6886' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E");
+}
+input[type="password"] {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B6886' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E");
+}
+input[name="nama"] {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B6886' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21a8 8 0 0 1 16 0'/%3E%3C/svg%3E");
+}
+input[name="no_telp"] {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B6886' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='7' y='2' width='10' height='20' rx='2'/%3E%3Cpath d='M11 18h2'/%3E%3C/svg%3E");
+}
+input[name="nim"], input[name="nip"] {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B6886' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Ccircle cx='9' cy='12' r='2'/%3E%3Cpath d='M14 10h4M14 14h4'/%3E%3C/svg%3E");
+}
+input[name="nama_kantin"] {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B6886' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 9l1.5-5h15L21 9'/%3E%3Cpath d='M4 9v11h16V9'/%3E%3Cpath d='M9 20v-6h6v6'/%3E%3C/svg%3E");
+}
+
+/* Pilihan role */
+label[for="role"] {
+	margin: 12px 0 2px 2px;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--muted);
+}
+
+select[name="role"] {
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	background-image:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B6886' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='8' r='3'/%3E%3Ccircle cx='17' cy='9' r='2.5'/%3E%3Cpath d='M3 20a6 6 0 0 1 12 0M14 20a4.5 4.5 0 0 1 7-3.7'/%3E%3C/svg%3E"),
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B6886' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+	background-position: 16px center, right 16px center;
+	background-size: 18px, 16px;
+	padding-right: 44px;
+}
+
+select[name="role"]:invalid { color: #9A97B3; }
+
+/* Kolom NIM / NIP / Nama Kantin muncul dengan animasi */
+.input-kondisional { animation: reveal .35s var(--ease); }
+@keyframes reveal { from { opacity: 0; transform: translateY(-6px); } }
+
+/* Link lupa password */
+form a {
+	align-self: flex-end;
+	margin: 6px 0 4px;
+	font-size: 13.5px;
+	font-weight: 600;
+	color: var(--brand);
+}
+form a:hover { text-decoration: underline; }
+
+/* Pesan error & sukses dari PHP */
+.msg-error,
+.msg-success {
+	margin: 4px 0 8px !important;
+	padding: 10px 14px;
+	border-radius: 12px;
+	font-size: 13.5px !important;
+	font-weight: 600;
+	text-align: left !important;
+}
+.msg-error   { background: #FDECEC; color: #C0392B !important; }
+.msg-success { background: #E8F7EE; color: #1E8449 !important; }
+
+/* ================= Tombol ================= */
+button {
+	position: relative;
+	cursor: pointer;
+	font: 700 14px/1 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+	letter-spacing: .4px;
+	border-radius: 14px;
+	transition: transform .2s var(--ease), box-shadow .25s, background-color .25s, color .25s;
+}
+
+/* Tombol utama (Sign In / Sign Up) */
+form button {
+	width: 100%;
+	margin-top: 16px !important;
+	padding: 16px 20px;
+	color: #fff;
+	border: 0;
+	background: linear-gradient(135deg, var(--brand-2), var(--brand));
+	box-shadow: 0 12px 24px -10px rgba(83, 74, 183, .7);
+}
+
+form button:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 16px 28px -10px rgba(83, 74, 183, .8);
+}
+
+form button:active { transform: translateY(0) scale(.98); }
+
+/* Tombol di panel merek (pindah Sign In / Sign Up) */
+button.ghost {
+	padding: 13px 28px;
+	color: #fff;
+	background: rgba(255, 255, 255, .12);
+	border: 1.5px solid rgba(255, 255, 255, .7);
+	border-radius: 999px;
+	backdrop-filter: blur(4px);
+}
+
+button.ghost:hover {
+	background: #fff;
+	color: var(--brand);
+	transform: translateY(-2px);
+}
+
+button:focus-visible,
+a:focus-visible {
+	outline: 3px solid rgba(83, 74, 183, .45);
+	outline-offset: 3px;
+}
+
+/* ================= Popup loading (dipertahankan) ================= */
+.popup-loading {
+	position: fixed; inset: 0; display: none;
+	justify-content: center; align-items: center;
+	background: rgba(30, 27, 58, .35); backdrop-filter: blur(4px); z-index: 99999;
+}
+.popup-content {
+	background: #fff; padding: 30px; border-radius: 18px; text-align: center;
+	min-width: min(300px, calc(100vw - 40px)); box-shadow: 0 20px 40px rgba(0, 0, 0, .2);
+}
+.spinner {
+	width: 45px; height: 45px; margin: 0 auto 15px;
+	border: 4px solid #E5E5E5; border-top-color: var(--brand); border-radius: 50%;
+	animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* =====================================================================
+   RESPONSIVE
+   ===================================================================== */
+
+/* Tablet */
+@media (max-width: 900px) {
+	.container { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
+	.overlay-panel p { font-size: 14px; }
+	.overlay::after { font-size: 22px; letter-spacing: 2px; }
+}
+
+/* HP: header merek di atas, form di bawah */
+@media (max-width: 720px) {
+	body { place-items: start center; padding: 14px; }
+
+	.container {
+		grid-template-columns: 1fr;
+		min-height: 0;
+		border-radius: 24px;
+	}
+
+	.overlay-container { grid-column: 1; grid-row: 1; }
+	.overlay { position: relative; inset: auto; border-radius: 0 0 26px 26px; }
+	.overlay::after { display: none; }
+
+	.overlay-panel {
+		position: relative;
+		inset: auto;
+		align-items: center;
+		text-align: center;
+		gap: 10px;
+		padding: 28px 22px 24px;
+	}
+	.overlay-panel::before { margin-bottom: 4px; }
+	.overlay-panel h1 { font-size: 26px; }
+	.overlay-panel p { font-size: 14px; margin-bottom: 6px; }
+
+	/* Di HP hanya satu panel yang ditampilkan, tanpa ruang kosong */
+	.overlay-left { display: none; }
+	.container.right-panel-active .overlay-left  { display: flex; }
+	.container.right-panel-active .overlay-right { display: none; }
+
+	.form-container { grid-column: 1; grid-row: 2; }
+	.sign-up-container { display: none; }
+	.container.right-panel-active .sign-up-container { display: flex; }
+	.container.right-panel-active .sign-in-container { display: none; }
+
+	form { padding: 26px 20px 30px; max-width: none; }
+	form h1 { font-size: 24px; }
+
+	input, select[name="role"] { font-size: 16px; } /* cegah auto-zoom di iPhone */
+}
+
+/* HP kecil */
+@media (max-width: 360px) {
+	body { padding: 8px; }
+	form { padding: 22px 16px 26px; }
+	button.ghost { padding: 11px 22px; }
+}
+
+/* Layar pendek (HP posisi miring) */
+@media (max-height: 520px) and (min-width: 721px) {
+	.container { min-height: calc(100dvh - 24px); }
+	.overlay::after { display: none; }
+	form { padding-block: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after { animation: none !important; transition: none !important; }
+}

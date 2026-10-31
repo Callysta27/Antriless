@@ -1,0 +1,159 @@
+/* ── Reports: Page Header with Actions ── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.page-header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.page-header p  { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Buttons ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--purple) !important;
+  color: #ffffff !important;
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn-primary:hover { opacity: 0.85; }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-secondary:hover {
+  background: var(--surface2);
+  border-color: var(--text3);
+}
+
+/* ── Reports: Stat Card layout (icon + info side by side) ── */
+.stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.stat-info { flex: 1; }
+
+.stat-change {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.stat-change.positive { color: var(--teal); }
+.stat-change.negative { color: var(--red); }
+.stat-change .text-muted { color: var(--text3); font-size: 11px; }
+
+/* ── Reports: Filter Bar ── */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-bar .filter-btn {
+  padding: 7px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.filter-bar .filter-btn:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.filter-bar .filter-btn.active {
+  background: var(--purple);
+  color: #fff;
+  border-color: var(--purple);
+}
+
+/* ── Reports: Bottom Row full width ── */
+.bottom-row { grid-template-columns: 1fr; }
+
+/* ── Reports: Product Cell in Table ── */
+.product-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.product-img {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  color: var(--text2);
+}
+
+.product-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.product-sku  { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+/* ── Category Tag ── */
+.category-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--purple-light);
+  color: var(--purple);
+}
+
+/* ── Stock Badge ── */
+.stock-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.stock-badge.in-stock  { background: var(--teal-light); color: #0F6E56; }
+.stock-badge.low-stock { background: var(--amber-light); color: #854F0B; }
+.stock-badge.out-stock { background: var(--red-light);   color: var(--red); }
