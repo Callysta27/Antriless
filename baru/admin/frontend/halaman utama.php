@@ -167,14 +167,25 @@ $ulasan = [
               </div>
             </li>
 
-            <!-- Favorit -->
-            <li>
-              <a href="#" class="rounded-circle bg-light p-2 mx-1 d-inline-block" title="Favorit">
-                <svg width="24" height="24" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M12 21.35 10.55 20C5.4 15.36 2 12.27 2 8.5 2 5.41 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.08C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.41 22 8.5c0 3.77-3.4 6.86-8.55 11.53L12 21.35Z" />
-                </svg>
-              </a>
-            </li>
+           <!-- Notifikasi pesanan -->
+          <li class="position-relative">
+            <a href="#" class="rounded-circle bg-light p-2 mx-1 d-inline-block position-relative" id="notifToggle" title="Notifikasi Pesanan">
+              <svg width="24" height="24" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2Zm6-6V11c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2Z" />
+              </svg>
+              <span class="notif-dot" id="notifDot"></span>
+            </a>
+
+            <div id="notifDropdown" class="profil-dropdown notif-dropdown">
+              <div class="profil-info">
+                <div class="profil-nama">Notifikasi Pesanan</div>
+              </div>
+              <div class="notif-isi" id="notifIsi">
+                <p class="notif-kosong">Memuat...</p>
+              </div>
+              <a href="status.php" class="profil-link">Lihat detail pesanan →</a>
+            </div>
+          </li>
 
             <!-- Info pesanan -->
             <li>

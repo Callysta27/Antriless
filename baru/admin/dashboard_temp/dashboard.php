@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../frontend/includes/config.php';
 ob_start();
-session_name('admin_session'); 
+session_name('admin_session');
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
@@ -10,78 +10,125 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 if (trim($_SESSION['role']) !== 'pemilik_kantin') {
-    // Bukan pemilik kantin, tendang balik ke halaman user
     header("Location: ../login.php");
     exit;
 }
 
+$id_kantin   = (int) $_SESSION['user_id'];   // id pemilik kantin = menu.id_kantin
 $nama_user   = $_SESSION['nama'];
 $role_user   = $_SESSION['role'];
 $nama_kantin = $_SESSION['nama_kantin'] ?? 'Kantin';
 
-$total_revenue = 0;
-$total_orders  = 0;
-
-$queryStats = mysqli_query($conn, "
-    SELECT 
-        COALESCE(SUM(total_harga), 0) AS total_revenue,
-        COUNT(id_order) AS total_orders
-    FROM orders
-");
-
-if ($queryStats && mysqli_num_rows($queryStats) > 0) {
-    $stats         = mysqli_fetch_assoc($queryStats);
-    $total_revenue = $stats['total_revenue'];
-    $total_orders  = $stats['total_orders'];
-}
-
-// Handle update status SEBELUM query orders (agar tabel langsung refresh)
+/* ---------------------------------------------------------------------
+   UPDATE STATUS — hanya untuk order yang berisi menu milik kantin ini
+   --------------------------------------------------------------------- */
 if (isset($_POST['update_status'])) {
-    $id_order    = mysqli_real_escape_string($conn, $_POST['id_order']);
-    $status_baru = mysqli_real_escape_string($conn, $_POST['status']);
+    $id_order    = (int) $_POST['id_order'];
+    $status_baru = $_POST['status'] ?? '';
 
-    $allowed = [
-    'Diterima',
-    'Diproses',
-    'Siap Diambil',
-    'Selesai'
-    ];
-    if (in_array($status_baru, $allowed)) {
-        mysqli_query($conn, "
-            UPDATE orders 
-            SET status = '$status_baru' 
-            WHERE id_order = '$id_order'
+    $allowed = ['Diterima', 'Diproses', 'Siap Diambil', 'Selesai'];
+
+    if (in_array($status_baru, $allowed, true)) {
+        $stmt = mysqli_prepare($conn, "
+            UPDATE orders o
+            SET o.status = ?
+            WHERE o.id_order = ?
+              AND EXISTS (
+                  SELECT 1
+                  FROM detail_order d
+                  JOIN menu m ON m.id_menu = d.id_menu
+                  WHERE d.id_order = o.id_order
+                    AND m.id_kantin = ?
+              )
         ");
+        mysqli_stmt_bind_param($stmt, 'sii', $status_baru, $id_order, $id_kantin);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
     }
 
     header("Location: dashboard.php");
     exit;
 }
 
-$queryOrders = mysqli_query($conn, "
-    SELECT o.*, u.role
+/* ---------------------------------------------------------------------
+   STATISTIK — hanya dari item menu milik kantin ini
+   Revenue = jumlah subtotal item kantin ini (bukan total order penuh,
+   karena satu order bisa berisi menu dari beberapa kantin)
+   --------------------------------------------------------------------- */
+$total_revenue = 0;
+$total_orders  = 0;
+
+$stmt = mysqli_prepare($conn, "
+    SELECT
+        COALESCE(SUM(d.total), 0)      AS total_revenue,
+        COUNT(DISTINCT d.id_order)     AS total_orders
+    FROM detail_order d
+    JOIN menu m ON m.id_menu = d.id_menu
+    WHERE m.id_kantin = ?
+");
+mysqli_stmt_bind_param($stmt, 'i', $id_kantin);
+mysqli_stmt_execute($stmt);
+$stats = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+mysqli_stmt_close($stmt);
+
+if ($stats) {
+    $total_revenue = $stats['total_revenue'];
+    $total_orders  = $stats['total_orders'];
+}
+
+/* ---------------------------------------------------------------------
+   5 ORDER TERBARU — hanya order yang berisi menu kantin ini
+   Dosen diprioritaskan di atas
+   --------------------------------------------------------------------- */
+$stmt = mysqli_prepare($conn, "
+    SELECT
+        o.id_order,
+        o.id_user,
+        o.status,
+        o.waktu_pesan,
+        u.nama  AS nama_pemesan,
+        u.role,
+        SUM(d.total) AS total_kantin
     FROM orders o
-    JOIN user u ON o.id_user = u.id_user
+    JOIN user u          ON u.id_user  = o.id_user
+    JOIN detail_order d  ON d.id_order = o.id_order
+    JOIN menu m          ON m.id_menu  = d.id_menu
+    WHERE m.id_kantin = ?
+    GROUP BY o.id_order, o.id_user, o.status, o.waktu_pesan, u.nama, u.role
     ORDER BY
-        CASE
-            WHEN u.role = 'dosen' THEN 0
-            ELSE 1
-        END,
+        CASE WHEN u.role = 'dosen' THEN 0 ELSE 1 END,
         o.waktu_pesan DESC
     LIMIT 5
 ");
+mysqli_stmt_bind_param($stmt, 'i', $id_kantin);
+mysqli_stmt_execute($stmt);
+$queryOrders = mysqli_stmt_get_result($stmt);
+mysqli_stmt_close($stmt);
+
+// Samakan penulisan status lama ("di proses", "siap diambil") dengan yang baru
+function normalStatus($s)
+{
+    $kunci = strtolower(str_replace(' ', '', trim((string) $s)));
+    return match ($kunci) {
+        'diterima'    => 'Diterima',
+        'diproses'    => 'Diproses',
+        'siapdiambil' => 'Siap Diambil',
+        'selesai'     => 'Selesai',
+        default       => trim((string) $s),
+    };
+}
 ?>
 <!doctype html>
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AdminPanel — Dashboard</title>
+    <title>AdminPanel — Dashboard <?= htmlspecialchars($nama_kantin) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
     <link rel="stylesheet" href="style/style.css?v=<?= filemtime(__DIR__ . '/style/style.css') ?>" />
-<link rel="stylesheet" href="style/dashboard.css?v=<?= filemtime(__DIR__ . '/style/dashboard.css') ?>" />
+    <link rel="stylesheet" href="style/dashboard.css?v=<?= filemtime(__DIR__ . '/style/dashboard.css') ?>" />
   </head>
   <body>
     <div class="layout">
@@ -133,7 +180,7 @@ $queryOrders = mysqli_query($conn, "
 
         <header class="topbar">
           <div class="topbar-title">
-            Dashboard <span class="breadcrumb">/ Overview</span>
+            Dashboard <span class="breadcrumb">/ <?= htmlspecialchars($nama_kantin) ?></span>
           </div>
           <div class="topbar-spacer"></div>
           <div class="search">
@@ -171,33 +218,30 @@ $queryOrders = mysqli_query($conn, "
 
         <div class="content">
           <div class="page-header">
-  
-<div class="page-header">
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-    <div>
-      <h1>
-        <?php
-        $jam = date('H');
-        if ($jam < 12)      echo "Good morning";
-        elseif ($jam < 18)  echo "Good afternoon";
-        else                echo "Good evening";
-        ?>, <?= htmlspecialchars(explode(' ', $nama_user)[0]) ?> 👋
-      </h1>
-      <p>Here's what's happening with your store today.</p>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+              <div>
+                <h1>
+                  <?php
+                  $jam = date('H');
+                  if ($jam < 12)      echo "Good morning";
+                  elseif ($jam < 18)  echo "Good afternoon";
+                  else                echo "Good evening";
+                  ?>, <?= htmlspecialchars(explode(' ', $nama_user)[0]) ?> 👋
+                </h1>
+                <p>Here's what's happening with <strong><?= htmlspecialchars($nama_kantin) ?></strong> today.</p>
+              </div>
+              <a href="reports.php"
+                style="display:inline-flex;align-items:center;gap:8px;
+                        padding:9px 18px;background:#16a34a;color:#fff;
+                        border-radius:8px;font-size:13px;font-weight:600;
+                        text-decoration:none;transition:background 0.2s;
+                        box-shadow:0 1px 3px rgba(0,0,0,0.15);"
+                onmouseover="this.style.background='#15803d'"
+                onmouseout="this.style.background='#16a34a'">
+                <i class="ti ti-file-spreadsheet" style="font-size:16px"></i>
+                Download Laporan Excel
+              </a>
             </div>
-            <a href="reports.php"
-              style="display:inline-flex;align-items:center;gap:8px;
-                      padding:9px 18px;background:#16a34a;color:#fff;
-                      border-radius:8px;font-size:13px;font-weight:600;
-                      text-decoration:none;transition:background 0.2s;
-                      box-shadow:0 1px 3px rgba(0,0,0,0.15);"
-              onmouseover="this.style.background='#15803d'"
-              onmouseout="this.style.background='#16a34a'">
-              <i class="ti ti-file-spreadsheet" style="font-size:16px"></i>
-              Download Laporan Excel
-            </a>
-          </div>
-        </div>
           </div>
 
           <!-- Stats -->
@@ -247,52 +291,36 @@ $queryOrders = mysqli_query($conn, "
                     <?php if ($queryOrders && mysqli_num_rows($queryOrders) > 0): ?>
                       <?php while ($order = mysqli_fetch_assoc($queryOrders)): ?>
                         <?php
-                          $badgeClass = match($order['status']) {
-                              'di terima'    => 'badge-default',
-                              'di proses'    => 'badge-warn',
-                              'siap diambil' => 'badge-success',
+                          $status = normalStatus($order['status']);
+                          $badgeClass = match ($status) {
+                              'Diproses'     => 'badge-warn',
+                              'Siap Diambil',
+                              'Selesai'      => 'badge-success',
                               default        => 'badge-default',
                           };
+                          $inisial = strtoupper(substr($order['nama_pemesan'] ?: 'U', 0, 2));
                         ?>
                         <tr>
-                          <td><span class="order-id">#<?= htmlspecialchars($order['id_order']) ?></span></td>
+                          <td><span class="order-id">#<?= (int) $order['id_order'] ?></span></td>
                           <td>
                             <div class="customer">
                               <div class="cust-av" style="background:#eeedfe;color:#534ab7">
-                                U<?= htmlspecialchars($order['id_user']) ?>
+                                <?= htmlspecialchars($inisial) ?>
                               </div>
-                              User <?= htmlspecialchars($order['id_user']) ?>
+                              <?= htmlspecialchars($order['nama_pemesan']) ?>
                             </div>
                           </td>
-                          <td><strong>Rp <?= number_format($order['total_harga'], 0, ',', '.') ?></strong></td>
+                          <td><strong>Rp <?= number_format($order['total_kantin'], 0, ',', '.') ?></strong></td>
                           <td style="color:var(--text2)"><?= date('d M Y, H:i', strtotime($order['waktu_pesan'])) ?></td>
                           <td>
                             <form method="POST" style="margin:0">
-                              <input type="hidden" name="id_order"      value="<?= htmlspecialchars($order['id_order']) ?>">
+                              <input type="hidden" name="id_order" value="<?= (int) $order['id_order'] ?>">
                               <input type="hidden" name="update_status" value="1">
-                             <select name="status" class="status-select <?= $badgeClass ?>" onchange="this.form.submit()">
-
-    <option value="Diterima"
-        <?= trim($order['status']) == 'Diterima' ? 'selected' : '' ?>>
-        Diterima
-    </option>
-
-    <option value="Diproses"
-        <?= trim($order['status']) == 'Diproses' ? 'selected' : '' ?>>
-        Diproses
-    </option>
-
-    <option value="Siap Diambil"
-        <?= trim($order['status']) == 'Siap Diambil' || trim($order['status']) == 'siap diambil' ? 'selected' : '' ?>>
-        Siap Diambil
-    </option>
-
-    <option value="Selesai"
-        <?= trim($order['status']) == 'Selesai' ? 'selected' : '' ?>>
-        Selesai
-    </option>
-
-</select>
+                              <select name="status" class="status-select <?= $badgeClass ?>" onchange="this.form.submit()">
+                                <?php foreach (['Diterima', 'Diproses', 'Siap Diambil', 'Selesai'] as $opsi): ?>
+                                  <option value="<?= $opsi ?>" <?= $status === $opsi ? 'selected' : '' ?>><?= $opsi ?></option>
+                                <?php endforeach; ?>
+                              </select>
                             </form>
                           </td>
                         </tr>

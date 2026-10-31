@@ -150,6 +150,55 @@ header #search-form input {
     background: #fef2f2;
 }
 
+/* --- Notifikasi pesanan --- */
+.notif-dot {
+    display: none;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 10px;
+    height: 10px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: #dc2626;
+}
+
+.notif-dot.tampil {
+    display: block;
+}
+
+#notifToggle.goyang svg {
+    animation: goyang .6s ease 2;
+    transform-origin: top center;
+}
+
+@keyframes goyang {
+    0%, 100% { transform: rotate(0); }
+    25%      { transform: rotate(15deg); }
+    75%      { transform: rotate(-15deg); }
+}
+
+.notif-dropdown {
+    min-width: 260px;
+}
+
+.notif-isi {
+    padding: 12px 14px;
+}
+
+.notif-judul {
+    margin: 8px 0 2px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111;
+}
+
+.notif-kecil,
+.notif-kosong {
+    margin: 0;
+    font-size: 12px;
+    color: #9ca3af;
+}
 
 /* =====================================================================
    3. BANNER NEW PRODUCT & KOTAK PROMO

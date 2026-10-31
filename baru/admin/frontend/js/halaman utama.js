@@ -114,52 +114,274 @@ document.querySelectorAll('.product-item .nav-link').forEach((tombol) => {
 });
 
 
-const searchInput = document.querySelector('#search-form input');
-
-searchInput.addEventListener('keyup', function() {
-    let kataKunci = this.value;
-    
-    // Mengirim data ke backend secara real-time tanpa reload page
-    fetch('proses_cari.php?keyword=' + kataKunci)
-        .then(response => response.text())
-        .then(data => {
-            // Tampilkan hasil pencarian di dalam wadah menu makanan Anda
-            document.querySelector('#konten-makanan').innerHTML = data;
-        });
-});
-
-const warna = {
-  'di terima':    'warning',
-  'di proses':    'primary',
-  'siap diambil': 'success'
-};
-const label = {
-  'di terima':    'Di Terima 📋',
-  'di proses':    'Sedang Diproses 🍳',
-  'siap diambil': 'Siap Diambil ✅'
+// FILTER PRODUK: kata kunci + kategori + urutan termurah
+const filterMenu = {
+  kategori: 'all',
+  keyword: '',
+  termurah: false
 };
 
-// FILTER PRODUK BERDASARKAN KATEGORI
-function filterProduk(kategori){
+const productGrid = document.querySelector('.product-grid');
 
-    document.querySelectorAll('.product-item').forEach(item => {
-
-        const kategoriProduk =
-            item.dataset.kategori?.toLowerCase();
-
-        const card =
-            item.closest('.col');
-
-        if(
-            kategori === 'all' ||
-            kategoriProduk === kategori
-        ){
-            if(card) card.style.display = '';
-        }else{
-            if(card) card.style.display = 'none';
-        }
-
-    });
-
+// Simpan urutan asli supaya bisa kembali setelah "Termurah" dimatikan
+if (productGrid) {
+  productGrid.querySelectorAll(':scope > .col').forEach((col, i) => {
+    col.dataset.urutan = i;
+  });
 }
 
+function terapkanFilter() {
+  if (!productGrid) return;
+
+  const cols = Array.from(productGrid.querySelectorAll(':scope > .col'));
+  let jumlahTampil = 0;
+
+  cols.forEach(col => {
+    const item = col.querySelector('.product-item');
+    const kategoriProduk = item.dataset.kategori?.toLowerCase();
+    const namaProduk = item.querySelector('h3').textContent.toLowerCase();
+
+    const cocokKategori = filterMenu.kategori === 'all' || kategoriProduk === filterMenu.kategori;
+    const cocokKeyword = namaProduk.includes(filterMenu.keyword);
+
+    col.style.display = cocokKategori && cocokKeyword ? '' : 'none';
+    if (cocokKategori && cocokKeyword) jumlahTampil++;
+  });
+
+  cols.sort((a, b) => {
+    if (filterMenu.termurah) {
+      const hargaA = parseInt(a.querySelector('.product-item').dataset.harga);
+      const hargaB = parseInt(b.querySelector('.product-item').dataset.harga);
+      return hargaA - hargaB;
+    }
+    return a.dataset.urutan - b.dataset.urutan;
+  });
+  cols.forEach(col => productGrid.appendChild(col));
+
+  // Tab aktif
+  document.querySelectorAll('#nav-tab [data-kategori]').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.kategori === filterMenu.kategori);
+  });
+  document.getElementById('tab-termurah')?.classList.toggle('active', filterMenu.termurah);
+
+  const pesanKosong = document.getElementById('menu-kosong');
+  if (pesanKosong) pesanKosong.style.display = jumlahTampil ? 'none' : 'block';
+}
+
+function filterProduk(kategori) {
+  filterMenu.kategori = kategori.toLowerCase();
+  terapkanFilter();
+}
+
+// Klik "Termurah" sekali = urutkan dari yang termurah, klik lagi = urutan semula
+function sortMurah() {
+  filterMenu.termurah = !filterMenu.termurah;
+  terapkanFilter();
+}
+
+// Dipakai kotak promo Dessert / Food di atas
+function pilihKategori(kategori) {
+  filterProduk(kategori);
+  scrollMenu();
+}
+
+// PENCARIAN MENU
+const searchInput = document.getElementById('search-input');
+
+function cariMenu() {
+  filterMenu.keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  terapkanFilter();
+}
+
+if (searchInput) {
+  searchInput.addEventListener('input', cariMenu);
+
+  document.getElementById('search-form').addEventListener('submit', function (e) {
+    e.preventDefault();             // jangan reload halaman
+    cariMenu();
+    scrollMenu();
+  });
+}
+
+// Tombol "Order Now" di banner New Product
+function lihatMenu(idMenu) {
+  filterMenu.kategori = 'all';
+  filterMenu.keyword = '';
+  if (searchInput) searchInput.value = '';
+  terapkanFilter();
+
+  const kartu = document.getElementById('menu-' + idMenu);
+  if (!kartu) return scrollMenu();
+
+  kartu.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  kartu.classList.add('menu-sorot');
+  setTimeout(() => kartu.classList.remove('menu-sorot'), 2000);
+}
+
+// SCROLL & CAROUSEL
+function scrollMenu() {
+  document.querySelector('#foods-menu').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Tombol ❮ ❯ di Category & Newly Fresh Bake (arah: -1 kiri, 1 kanan)
+function geser(carousel, arah) {
+  document.querySelector(carousel + ' .swiper-wrapper')
+    .scrollBy({ left: 350 * arah, behavior: 'smooth' });
+}
+
+// KOTAK PROMO (Dessert / Food) — bisa diklik atau ditekan Enter
+document.querySelectorAll('[data-kategori-promo]').forEach(kotak => {
+  const buka = () => pilihKategori(kotak.dataset.kategoriPromo);
+  kotak.addEventListener('click', buka);
+  kotak.addEventListener('keydown', e => {
+    if (e.key === 'Enter') buka();
+  });
+});
+
+// ── Profil Dropdown ──
+const profileToggle = document.getElementById('profileToggle');
+const profileDropdown = document.getElementById('profileDropdown');
+
+if (profileToggle && profileDropdown) {
+  profileToggle.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    profileDropdown.classList.toggle('tampil');
+  });
+
+  // klik di dalam dropdown tidak menutupnya
+  profileDropdown.addEventListener('click', function (e) {
+    e.stopPropagation();
+  });
+
+  // klik di luar dropdown menutupnya
+  document.addEventListener('click', function () {
+    profileDropdown.classList.remove('tampil');
+  });
+}
+
+// MODAL INFO PESANAN
+// Kunci tanpa spasi & huruf kecil: "Diterima", "di terima", "DITERIMA" dianggap sama
+const warnaStatus = {
+  diterima:    'warning',
+  diproses:    'primary',
+  siapdiambil: 'success'
+};
+const labelStatus = {
+  diterima:    'Di Terima 📋',
+  diproses:    'Sedang Diproses 🍳',
+  siapdiambil: 'Siap Diambil ✅'
+};
+
+// Teks dari database dimasukkan sebagai teks biasa, bukan HTML
+function amankan(teks) {
+  const div = document.createElement('div');
+  div.textContent = teks ?? '';
+  return div.innerHTML;
+}
+
+document.getElementById('modalInfoPesanan').addEventListener('show.bs.modal', function () {
+  const isi = document.getElementById('infoPesananBody');
+  isi.innerHTML = `
+    <div class="spinner-border text-warning mb-3" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="text-muted">Mengambil data pesanan...</p>
+  `;
+
+  fetch('status_pesanan.php')
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        const kunci = String(data.status_pesanan || '').toLowerCase().replace(/\s+/g, '');
+        const wc = warnaStatus[kunci] || 'secondary';
+        const lb = labelStatus[kunci] || amankan(data.status_pesanan);
+        isi.innerHTML = `
+          <span class="badge bg-${wc} fs-6 px-4 py-2 mb-3">${lb}</span>
+          <p class="mb-1 fw-semibold">${amankan(data.nama_menu)}</p>
+          <p class="text-muted small">Total: Rp ${Number(data.total).toLocaleString('id-ID')}</p>
+        `;
+      } else if (data.msg === 'not_logged_in') {
+        isi.innerHTML = '<p class="text-muted">Silakan <a href="../login.php">login</a> terlebih dahulu.</p>';
+      } else {
+        isi.innerHTML = '<p class="text-muted">Belum ada pesanan aktif.</p>';
+      }
+    })
+    .catch(() => {
+      isi.innerHTML = '<p class="text-danger">Gagal mengambil data.</p>';
+    });
+
+});
+
+// ── Notifikasi update pesanan ──
+(function () {
+  const toggle = document.getElementById('notifToggle');
+  const dropdown = document.getElementById('notifDropdown');
+  const dot = document.getElementById('notifDot');
+  const isi = document.getElementById('notifIsi');
+  if (!toggle || !dropdown) return;
+
+  const KUNCI = 'antriless_status_dilihat';
+  let statusSekarang = null;
+
+  function ambilDilihat() {
+    try { return localStorage.getItem(KUNCI); } catch (e) { return null; }
+  }
+
+  function simpanDilihat(nilai) {
+    try { localStorage.setItem(KUNCI, nilai); } catch (e) {}
+  }
+
+  function cekStatus() {
+    fetch('status_pesanan.php')
+      .then(res => res.json())
+      .then(data => {
+        if (data.status !== 'ok') {
+          statusSekarang = null;
+          dot.classList.remove('tampil');
+          isi.innerHTML = '<p class="notif-kosong">Belum ada pesanan aktif.</p>';
+          return;
+        }
+
+        const kunci = String(data.status_pesanan || '').toLowerCase().replace(/\s+/g, '');
+        const wc = warnaStatus[kunci] || 'secondary';
+        const lb = labelStatus[kunci] || amankan(data.status_pesanan);
+
+        isi.innerHTML = `
+          <span class="badge bg-${wc}">${lb}</span>
+          <p class="notif-judul">${amankan(data.nama_menu)}</p>
+          <p class="notif-kecil">Total: Rp ${Number(data.total).toLocaleString('id-ID')}</p>
+        `;
+
+        // tanda unik: menu + status, berubah saat status pesanan diperbarui
+        const tanda = kunci + '|' + (data.nama_menu || '');
+        if (tanda !== statusSekarang && tanda !== ambilDilihat()) {
+          dot.classList.add('tampil');
+          toggle.classList.remove('goyang');
+          void toggle.offsetWidth;          // ulang animasi
+          toggle.classList.add('goyang');
+        }
+        statusSekarang = tanda;
+      })
+      .catch(() => {
+        isi.innerHTML = '<p class="notif-kosong">Gagal memuat notifikasi.</p>';
+      });
+  }
+
+  toggle.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    dropdown.classList.toggle('tampil');
+    document.getElementById('profileDropdown')?.classList.remove('tampil');
+
+    // tandai sudah dilihat
+    dot.classList.remove('tampil');
+    if (statusSekarang) simpanDilihat(statusSekarang);
+  });
+
+  dropdown.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', () => dropdown.classList.remove('tampil'));
+
+  cekStatus();
+  setInterval(cekStatus, 15000);           // cek tiap 15 detik
+})();

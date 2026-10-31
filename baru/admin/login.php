@@ -9,50 +9,74 @@ $error_signup   = '';
 $success_signup = '';
 $activePanel    = '';
 
+// ── AKUN DEMO ─────────────────────────────────────────────────────────────────
+// Email akun demo (sesuai data contoh di database/init.sql).
+// Password tidak ditulis di HTML: server langsung login-kan akun ini.
+$akunDemo = [
+    'mahasiswa'      => 'budi@untar.ac.id',
+    'dosen'          => 'dosen@untar.ac.id',
+    'pemilik_kantin' => 'kantin@antriless.com',
+];
+
+// Simpan data user ke session lalu arahkan sesuai role
+function masukkanUser($row)
+{
+    $adminKantin = trim($row['role']) === 'pemilik_kantin';
+
+    // Session name ditentukan SEBELUM session_start
+    session_name($adminKantin ? 'admin_session' : 'user_session');
+    session_start();
+    session_regenerate_id(true);
+
+    $_SESSION['user_id']     = $row['id_user'];
+    $_SESSION['nama']        = $row['nama'];
+    $_SESSION['role']        = $row['role'];
+    $_SESSION['nama_kantin'] = $row['nama_kantin'] ?? '';
+
+    header('Location: ' . ($adminKantin ? 'dashboard_temp/dashboard.php' : 'frontend/halaman utama.php'));
+    ob_end_flush();
+    exit;
+}
+
+function cariUserByEmail($conn, $email)
+{
+    $stmt = mysqli_prepare($conn, "SELECT * FROM user WHERE email = ? LIMIT 1");
+    mysqli_stmt_bind_param($stmt, 's', $email);
+    mysqli_stmt_execute($stmt);
+    $row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    mysqli_stmt_close($stmt);
+    return $row;
+}
+
+// ── LOGIN DEMO ────────────────────────────────────────────────────────────────
+if (isset($_POST['demo'])) {
+    $roleDemo = $_POST['demo'];
+
+    if (isset($akunDemo[$roleDemo])) {
+        $row = cariUserByEmail($conn, $akunDemo[$roleDemo]);
+        if ($row) masukkanUser($row);
+    }
+    $error_login = "Akun demo belum tersedia. Pastikan data contoh di database sudah di-import.";
+}
+
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 if (isset($_POST['login'])) {
-    $email    = trim($_POST['email_login']);
-    $password = $_POST['pass_login'];
+    $email    = trim($_POST['email_login'] ?? '');
+    $password = $_POST['pass_login'] ?? '';
 
-    $sql = mysqli_query($conn, "SELECT * FROM user WHERE email = '$email'");
+    $row = cariUserByEmail($conn, $email);
 
-    if (mysqli_num_rows($sql) > 0) {
-        $row = mysqli_fetch_array($sql);
-
-        if ($password === $row['password']) {
-            // Tentukan session name berdasarkan role dari DB — SEBELUM session_start
-            if (trim($row['role']) === 'pemilik_kantin') {
-                session_name('admin_session');
-            } else {
-                session_name('user_session');
-            }
-            session_start();
-
-            $_SESSION['user_id']     = $row['id_user'];
-            $_SESSION['nama']        = $row['nama'];
-            $_SESSION['role']        = $row['role'];
-            $_SESSION['nama_kantin'] = $row['nama_kantin'] ?? '';
-
-            if (trim($row['role']) === 'pemilik_kantin') {
-                header("Location: dashboard_temp/dashboard.php");
-            } else {
-                header("Location: frontend/halaman utama.php");
-            }
-            ob_end_flush();
-            exit;
-        } else {
-            $error_login = "Email atau password salah.";
-        }
-    } else {
-        $error_login = "Email atau password salah.";
+    if ($row && $password === $row['password']) {
+        masukkanUser($row);
     }
+    $error_login = "Email atau password salah.";
 }
 
 // ── SIGNUP ────────────────────────────────────────────────────────────────────
 if (isset($_POST['signup'])) {
-    $nama        = trim($_POST['nama']);
-    $email       = trim($_POST['email_signup']);
-    $password    = $_POST['pass_signup'];
+    $nama        = trim($_POST['nama'] ?? '');
+    $email       = trim($_POST['email_signup'] ?? '');
+    $password    = $_POST['pass_signup'] ?? '';
     $no_telp     = trim($_POST['no_telp'] ?? '');
     $role        = $_POST['role'] ?? '';
     $nim         = trim($_POST['nim']         ?? '');
@@ -63,6 +87,8 @@ if (isset($_POST['signup'])) {
 
     if (empty($nama) || empty($email) || empty($password) || empty($role)) {
         $error_signup = "Semua field wajib diisi.";
+    } elseif (!in_array($role, ['mahasiswa', 'dosen', 'pemilik_kantin'], true)) {
+        $error_signup = "Role tidak valid.";
     } elseif (strlen($password) < 6) {
         $error_signup = "Password minimal 6 karakter.";
     } elseif ($role === 'mahasiswa' && empty($nim)) {
@@ -71,37 +97,34 @@ if (isset($_POST['signup'])) {
         $error_signup = "NIP wajib diisi untuk dosen.";
     } elseif ($role === 'pemilik_kantin' && empty($nama_kantin)) {
         $error_signup = "Nama kantin wajib diisi.";
+    } elseif (cariUserByEmail($conn, $email)) {
+        $error_signup = "Email sudah terdaftar. Silakan login.";
     } else {
-        $cek = mysqli_query($conn, "SELECT id_user FROM user WHERE email = '$email'");
-        if (mysqli_num_rows($cek) > 0) {
-            $error_signup = "Email sudah terdaftar. Silakan login.";
-        } else {
-            $sql_insert = "INSERT INTO user (nama, email, password, role, no_telp, nim, nip, nama_kantin)
-                           VALUES (
-                             '$nama', '$email', '$password', '$role', '$no_telp',
-                             " . (empty($nim)         ? 'NULL' : "'$nim'")         . ",
-                             " . (empty($nip)         ? 'NULL' : "'$nip'")         . ",
-                             " . (empty($nama_kantin) ? 'NULL' : "'$nama_kantin'") . "
-                           )";
+        $nim         = $nim         ?: null;
+        $nip         = $nip         ?: null;
+        $nama_kantin = $nama_kantin ?: null;
 
-            if (mysqli_query($conn, $sql_insert)) {
-                // Set session untuk tampilkan pesan sukses
-                session_name('user_session');
-                session_start();
-                $_SESSION['success_signup'] = "Akun berhasil dibuat! Silakan login.";
-                header("Location: login.php");
-                ob_end_flush();
-                exit;
-            } else {
-                $error_signup = "Gagal menyimpan data: " . mysqli_error($conn);
-            }
+        $stmt = mysqli_prepare($conn, "
+            INSERT INTO user (nama, email, password, role, no_telp, nim, nip, nama_kantin)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        mysqli_stmt_bind_param($stmt, 'ssssssss', $nama, $email, $password, $role, $no_telp, $nim, $nip, $nama_kantin);
+
+        if (mysqli_stmt_execute($stmt)) {
+            // Set session untuk tampilkan pesan sukses
+            session_name('user_session');
+            session_start();
+            $_SESSION['success_signup'] = "Akun berhasil dibuat! Silakan login.";
+            header("Location: login.php");
+            ob_end_flush();
+            exit;
         }
+        $error_signup = "Gagal menyimpan data. Coba lagi.";
     }
 }
 
 // ── Cek pesan sukses dari redirect signup ────────────────────────────────────
 if (empty($activePanel)) {
-    // Belum ada POST — cek apakah ada pesan signup dari session
     session_name('user_session');
     session_start();
     if (!empty($_SESSION['success_signup'])) {
@@ -116,11 +139,53 @@ if (empty($activePanel)) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="dashboard_temp/style/login.css?v=<?= filemtime(__DIR__ . '/dashboard_temp/style/login.css') ?>" />
-  <title>Login — Kantin</title>
+  <title>Login — Antriless</title>
   <style>
     .msg-error   { color: #e74c3c; font-size: 13px; margin: 6px 0; text-align: center; }
     .msg-success { color: #27ae60; font-size: 13px; margin: 6px 0; text-align: center; }
     .input-kondisional { display: none; }
+
+    /* ── Tombol akun demo ── */
+    .demo-box {
+      width: 100%;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px dashed #ddd;
+      text-align: center;
+    }
+
+    .demo-judul {
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .demo-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .demo-list button.demo-btn {
+      margin: 0;
+      padding: 7px 12px;
+      border: 1.5px solid #534AB7;
+      border-radius: 999px;
+      background: #fff;
+      color: #534AB7;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+
+    .demo-list button.demo-btn:hover {
+      background: #534AB7;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -183,6 +248,16 @@ if (empty($activePanel)) {
 
         <a href="forgotpassword.php">Forgot your password?</a>
         <button type="submit" name="login">Sign In</button>
+
+        <!-- Akun demo: langsung masuk tanpa mengetik email & password -->
+        <div class="demo-box">
+          <p class="demo-judul">Coba tanpa daftar, masuk sebagai:</p>
+          <div class="demo-list">
+            <button type="submit" name="demo" value="mahasiswa"      class="demo-btn" formnovalidate>🎓 Mahasiswa</button>
+            <button type="submit" name="demo" value="dosen"          class="demo-btn" formnovalidate>👨‍🏫 Dosen</button>
+            <button type="submit" name="demo" value="pemilik_kantin" class="demo-btn" formnovalidate>🧑‍🍳 Ibu Kantin</button>
+          </div>
+        </div>
       </form>
     </div>
 

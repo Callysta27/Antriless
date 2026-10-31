@@ -2,92 +2,115 @@
 require_once __DIR__ . '/../frontend/includes/config.php';
 
 session_name('admin_session');
-session_start(); // ini gua ubah
+session_start();
 
 if (!isset($_SESSION['user_id'])) {
-  header("Location: ../login.php"); // ini gua ubah
+  header("Location: ../login.php");
   exit;
 }
 
-$user_id     = $_SESSION['user_id'];
-$nama_user   = $_SESSION['nama']     ?? 'Admin';
-$role        = $_SESSION['role']     ?? '';
+if (trim($_SESSION['role'] ?? '') !== 'pemilik_kantin') {
+  header("Location: ../login.php");
+  exit;
+}
+
+$id_kantin   = (int) $_SESSION['user_id'];   // id pemilik kantin = menu.id_kantin
+$nama_user   = $_SESSION['nama']        ?? 'Admin';
+$role        = $_SESSION['role']        ?? '';
 $nama_kantin = $_SESSION['nama_kantin'] ?? '';
 
 $words   = explode(' ', trim($nama_user));
 $inisial = strtoupper(substr($words[0], 0, 1) . (isset($words[1]) ? substr($words[1], 0, 1) : substr($words[0], 1, 1)));
 
-// ── Update status ─────────────────────────────────────────────────
-if (isset($_POST['update_status'])) {
-  $id_order = (int)$_POST['id_order'];
-  $allowed = [
-    'Diterima',
-    'Diproses',
-    'Siap Diambil',
-    'Selesai'
-  ];
-  $status   = in_array($_POST['status'], $allowed) ? $_POST['status'] : '';
+$daftarStatus = ['Diterima', 'Diproses', 'Siap Diambil', 'Selesai'];
 
-  if ($status) {
-    mysqli_query($conn, "UPDATE orders SET status='$status' WHERE id_order=$id_order");
+// Samakan penulisan status lama ("di proses", "siap diambil") dengan yang baru
+function normalStatus($s)
+{
+  $kunci = strtolower(str_replace(' ', '', trim((string) $s)));
+  return match ($kunci) {
+    'diterima'    => 'Diterima',
+    'diproses'    => 'Diproses',
+    'siapdiambil' => 'Siap Diambil',
+    'selesai'     => 'Selesai',
+    default       => trim((string) $s),
+  };
+}
+
+// ── Update status: hanya order yang berisi menu kantin ini ────────
+if (isset($_POST['update_status'])) {
+  $id_order = (int) $_POST['id_order'];
+  $status   = $_POST['status'] ?? '';
+
+  if (in_array($status, $daftarStatus, true)) {
+    $stmt = mysqli_prepare($conn, "
+      UPDATE orders o
+      SET o.status = ?
+      WHERE o.id_order = ?
+        AND EXISTS (
+          SELECT 1
+          FROM detail_order d
+          JOIN menu m ON m.id_menu = d.id_menu
+          WHERE d.id_order = o.id_order
+            AND m.id_kantin = ?
+        )
+    ");
+    mysqli_stmt_bind_param($stmt, 'sii', $status, $id_order, $id_kantin);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
   }
-  header("Location: orderPage.php");
+
+  // kembali ke filter yang sedang dibuka
+  $kembali = isset($_GET['filter']) ? '?filter=' . urlencode($_GET['filter']) : '';
+  header("Location: orderPage.php" . $kembali);
   exit;
 }
 
+// ── Ambil semua order milik kantin ini ────────────────────────────
+// Total = bagian kantin ini saja (satu order bisa berisi menu beberapa kantin)
+$stmt = mysqli_prepare($conn, "
+  SELECT
+    o.id_order,
+    o.id_user,
+    o.waktu_pesan,
+    o.status,
+    o.prioritas,
+    u.nama,
+    u.role       AS user_role,
+    SUM(d.total) AS total_kantin
+  FROM orders o
+  JOIN user u         ON u.id_user  = o.id_user
+  JOIN detail_order d ON d.id_order = o.id_order
+  JOIN menu m         ON m.id_menu  = d.id_menu
+  WHERE m.id_kantin = ?
+  GROUP BY o.id_order, o.id_user, o.waktu_pesan, o.status, o.prioritas, u.nama, u.role
+  ORDER BY
+    CASE WHEN u.role = 'dosen' THEN 0 ELSE 1 END,
+    o.waktu_pesan DESC
+");
+mysqli_stmt_bind_param($stmt, 'i', $id_kantin);
+mysqli_stmt_execute($stmt);
+$semuaOrder = mysqli_fetch_all(mysqli_stmt_get_result($stmt), MYSQLI_ASSOC);
+mysqli_stmt_close($stmt);
+
+// ── Hitung per status (untuk angka di tombol filter) ──────────────
+$counts = ['all' => 0, 'Diterima' => 0, 'Diproses' => 0, 'Siap Diambil' => 0, 'Selesai' => 0];
+foreach ($semuaOrder as &$o) {
+  $o['status'] = normalStatus($o['status']);
+  $counts['all']++;
+  if (isset($counts[$o['status']])) $counts[$o['status']]++;
+}
+unset($o);
+
 // ── Filter status ─────────────────────────────────────────────────
 $filter = $_GET['filter'] ?? 'all';
-$where  = '';
-if ($filter !== 'all') {
-  $fs    = mysqli_real_escape_string($conn, $filter);
-  $where = "AND o.status = '$fs'";
+if ($filter !== 'all' && !in_array($filter, $daftarStatus, true)) {
+  $filter = 'all';
 }
 
-// ── Ambil orders ──────────────────────────────────────────────────
-$queryOrders = mysqli_query($conn, "
-    SELECT
-        o.id_order,
-        o.id_user,
-        o.waktu_pesan,
-        o.status,
-        o.total_harga,
-        o.prioritas,
-        u.nama,
-        u.role AS user_role
-    FROM orders o
-    JOIN user u ON o.id_user = u.id_user
-    WHERE 1=1 $where
-    ORDER BY
-        CASE WHEN u.role = 'dosen' THEN 0 ELSE 1 END,
-        o.waktu_pesan DESC
-");
-
-// ── Hitung per status untuk badge ────────────────────────────────
-$count_res = mysqli_query($conn, "SELECT status, COUNT(*) as n FROM orders GROUP BY status");
-$counts = [
-  'all' => 0,
-  'Diterima' => 0,
-  'Diproses' => 0,
-  'Siap Diambil' => 0,
-  'Selesai' => 0
-];
-while ($c = mysqli_fetch_assoc($count_res)) {
-  $counts[$c['status']] = (int)$c['n'];
-  $counts['all'] += (int)$c['n'];
-}
-
-// ── Badge warna per status ────────────────────────────────────────
-function statusBadge($status)
-{
-  $map = [
-    'Diterima'     => ['badge-amber', 'Diterima'],
-    'Diproses'     => ['badge-blue', 'Diproses'],
-    'Siap Diambil' => ['badge-green', 'Siap Diambil'],
-    'Selesai'      => ['badge-gray', 'Selesai'],
-  ];
-
-  return $map[$status] ?? ['badge-gray', $status];
-}
+$orders = $filter === 'all'
+  ? $semuaOrder
+  : array_values(array_filter($semuaOrder, fn($o) => $o['status'] === $filter));
 ?>
 <!doctype html>
 <html lang="id">
@@ -95,7 +118,7 @@ function statusBadge($status)
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AdminPanel — Orders</title>
+  <title>AdminPanel — Orders <?= htmlspecialchars($nama_kantin) ?></title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
@@ -127,7 +150,6 @@ function statusBadge($status)
       border: 1px solid #fcd34d;
     }
 
-    /* ── Table row hover ── */
     tbody tr {
       transition: background 0.12s;
     }
@@ -230,7 +252,7 @@ function statusBadge($status)
       <a href="products.php" class="nav-item"><i class="ti ti-box"></i> Products</a>
 
       <div class="sidebar-footer">
-        <div class="user-avatar"><?= $inisial ?></div>
+        <div class="user-avatar"><?= htmlspecialchars($inisial) ?></div>
         <div class="user-info">
           <div class="user-name"><?= htmlspecialchars($nama_user) ?></div>
           <div class="user-role"><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $role))) ?></div>
@@ -248,7 +270,7 @@ function statusBadge($status)
           <div class="notif-dot"></div>
         </div>
         <div class="icon-btn"><i class="ti ti-settings"></i></div>
-        <div class="user-avatar" style="width:34px;height:34px;cursor:pointer"><?= $inisial ?></div>
+        <div class="user-avatar" style="width:34px;height:34px;cursor:pointer"><?= htmlspecialchars($inisial) ?></div>
       </header>
 
       <div class="content">
@@ -257,25 +279,18 @@ function statusBadge($status)
         <div class="page-header">
           <div>
             <h1>Order Management</h1>
-            <p>Kelola dan update status pesanan masuk.</p>
+            <p>Kelola dan update status pesanan masuk untuk <strong><?= htmlspecialchars($nama_kantin ?: 'kantin kamu') ?></strong>.</p>
           </div>
         </div>
 
         <!-- Filter Pills -->
         <div class="filter-bar">
           <?php
-          $filters = [
-            'all' => 'Semua',
-            'Diterima' => 'Diterima',
-            'Diproses' => 'Diproses',
-            'Siap Diambil' => 'Siap Diambil',
-            'Selesai' => 'Selesai'
-          ];
+          $filters = ['all' => 'Semua'] + array_combine($daftarStatus, $daftarStatus);
           foreach ($filters as $key => $label):
             $active = ($filter === $key) ? 'active' : '';
           ?>
-            <a href="?filter=<?= urlencode($key) ?>"
-              class="filter-btn <?= $active ?>">
+            <a href="?filter=<?= urlencode($key) ?>" class="filter-btn <?= $active ?>">
               <?= $label ?>
               <span class="n"><?= $counts[$key] ?? 0 ?></span>
             </a>
@@ -297,8 +312,8 @@ function statusBadge($status)
                 </tr>
               </thead>
               <tbody>
-                <?php if ($queryOrders && mysqli_num_rows($queryOrders) > 0): ?>
-                  <?php while ($o = mysqli_fetch_assoc($queryOrders)): ?>
+                <?php if ($orders): ?>
+                  <?php foreach ($orders as $o): ?>
                     <tr>
                       <!-- Order ID -->
                       <td>
@@ -309,7 +324,7 @@ function statusBadge($status)
                       <td>
                         <div class="user-chip">
                           <div class="av <?= $o['user_role'] === 'dosen' ? 'dosen' : '' ?>">
-                            <?= strtoupper(substr($o['nama'], 0, 2)) ?>
+                            <?= htmlspecialchars(strtoupper(substr($o['nama'], 0, 2))) ?>
                           </div>
                           <div>
                             <div style="font-weight:500;font-size:13px">
@@ -322,10 +337,10 @@ function statusBadge($status)
                         </div>
                       </td>
 
-                      <!-- Total -->
+                      <!-- Total (bagian kantin ini) -->
                       <td>
                         <strong style="font-family:'DM Mono',monospace;font-size:13px">
-                          Rp <?= number_format($o['total_harga'], 0, ',', '.') ?>
+                          Rp <?= number_format($o['total_kantin'], 0, ',', '.') ?>
                         </strong>
                       </td>
 
@@ -350,37 +365,23 @@ function statusBadge($status)
 
                       <!-- Status — dropdown langsung update -->
                       <td>
-                        <form method="POST" style="margin:0">
-                          <input type="hidden" name="id_order" value="<?= (int)$o['id_order'] ?>">
+                        <form method="POST" action="orderPage.php?filter=<?= urlencode($filter) ?>" style="margin:0">
+                          <input type="hidden" name="id_order" value="<?= (int) $o['id_order'] ?>">
                           <input type="hidden" name="update_status" value="1">
                           <select name="status" class="status-select" onchange="this.form.submit()">
-
-                            <option value="Diterima"
-                              <?= trim($o['status']) == 'Diterima' ? 'selected' : '' ?>>
-                              ⏳ Diterima
-                            </option>
-
-                            <option value="Diproses"
-                              <?= trim($o['status']) == 'Diproses' ? 'selected' : '' ?>>
-                              🔄 Diproses
-                            </option>
-
-                            <option value="Siap Diambil"
-                              <?= trim($o['status']) == 'Siap Diambil' ? 'selected' : '' ?>>
-                              ✅ Siap Diambil
-                            </option>
-
-                            <option value="Selesai"
-                              <?= trim($o['status']) == 'Selesai' ? 'selected' : '' ?>>
-                              🏁 Selesai
-                            </option>
-
+                            <?php
+                            $ikon = ['Diterima' => '⏳', 'Diproses' => '🔄', 'Siap Diambil' => '✅', 'Selesai' => '🏁'];
+                            foreach ($daftarStatus as $opsi):
+                            ?>
+                              <option value="<?= $opsi ?>" <?= $o['status'] === $opsi ? 'selected' : '' ?>>
+                                <?= $ikon[$opsi] ?> <?= $opsi ?>
+                              </option>
+                            <?php endforeach; ?>
                           </select>
                         </form>
                       </td>
-
                     </tr>
-                  <?php endwhile; ?>
+                  <?php endforeach; ?>
                 <?php else: ?>
                   <tr>
                     <td colspan="6" style="text-align:center;color:var(--text2);padding:40px">
