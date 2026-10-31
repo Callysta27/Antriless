@@ -181,7 +181,7 @@ if (empty($activePanel)) {
                value="<?= htmlspecialchars($_POST['email_login'] ?? '') ?>" />
         <input type="password" name="pass_login"  placeholder="Password" required />
 
-        <a href="baru\admin\forgotpassword.php">Forgot your password?</a>
+        <a href="forgotpassword.php">Forgot your password?</a>
         <button type="submit" name="login">Sign In</button>
       </form>
     </div>
